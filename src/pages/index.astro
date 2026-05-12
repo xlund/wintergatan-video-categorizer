@@ -1,0 +1,314 @@
+---
+import Base from '../layouts/Base.astro';
+import VideoCard from '../components/VideoCard.astro';
+import videosRaw from '../data/videos.json';
+
+interface Video {
+  id: string; title: string; description: string;
+  publishedAt: string; thumbnail: string; tags: string[];
+  duration: string; viewCount: string; youtubeUrl: string;
+  project: string; videoType: string; instruments: string[];
+}
+
+const titleCase = (s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+// Sort newest first
+const videos = (videosRaw as Video[]).sort(
+  (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+);
+
+const projects   = [...new Set(videos.map(v => v.project).filter(Boolean))].sort();
+const videoTypes = [...new Set(videos.map(v => v.videoType).filter(Boolean))].sort();
+
+const instrCounts: Record<string, number> = {};
+videos.forEach(v => (v.instruments ?? []).forEach(i => { instrCounts[i] = (instrCounts[i] ?? 0) + 1; }));
+const instruments = Object.entries(instrCounts)
+  .filter(([, n]) => n >= 5)
+  .sort((a, b) => a[0].localeCompare(b[0]))
+  .map(([name, count]) => ({ name, count }));
+
+const projectCounts = Object.fromEntries(projects.map(p => [p, videos.filter(v => v.project   === p).length]));
+const typeCounts    = Object.fromEntries(videoTypes.map(t => [t, videos.filter(v => v.videoType === t).length]));
+
+// Timeline: group by year, descending
+const byYear: Record<number, Video[]> = {};
+videos.forEach(v => {
+  const y = new Date(v.publishedAt).getFullYear();
+  (byYear[y] ??= []).push(v);
+});
+const timelineYears = (Object.keys(byYear).map(Number)).sort((a, b) => b - a);
+
+const tlDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+// Project color map for legend
+const projectColors: Record<string, string> = {
+  'Marble Machine X': 'var(--c-mmx)',
+  'Marble Machine 3': 'var(--c-mm3)',
+  'Marble Machine':   'var(--c-mm)',
+  'Wintergatan Band': 'var(--c-band)',
+  'Speelklok':        'var(--c-klok)',
+  'Cyber Bass':       'var(--c-cyber)',
+  'Music Box':        'var(--c-mbox)',
+  'Other':            'var(--c-other)',
+};
+---
+
+<Base>
+  <header class="site-header">
+    <span class="site-title">wintergatan/<span>catalog</span></span>
+    <span class="header-meta" id="results-count">{videos.length} videos</span>
+  </header>
+
+  <aside class="sidebar">
+    {instruments.length > 0 && (
+      <div class="filter-section">
+        <span class="filter-label">component</span>
+        <ul class="filter-list instrument-filter-list">
+          {instruments.map(({ name, count }) => (
+            <li>
+              <label>
+                <input type="checkbox" data-filter="instrument" value={name} />
+                {titleCase(name)}
+                <span class="filter-count" data-count-instrument={name}>{count}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {projects.length > 0 && (
+      <div class="filter-section">
+        <span class="filter-label">project</span>
+        <ul class="filter-list">
+          {projects.map(p => (
+            <li>
+              <label>
+                <input type="checkbox" data-filter="project" value={p} />
+                {p}
+                <span class="filter-count" data-count-project={p}>{projectCounts[p]}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {videoTypes.length > 0 && (
+      <div class="filter-section">
+        <span class="filter-label">type</span>
+        <ul class="filter-list">
+          {videoTypes.map(t => (
+            <li>
+              <label>
+                <input type="checkbox" data-filter="type" value={t} />
+                {titleCase(t)}
+                <span class="filter-count" data-count-type={t}>{typeCounts[t]}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </aside>
+
+  <main class="main-content">
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button class="tab active" data-tab="catalog" type="button">catalog</button>
+      <button class="tab" data-tab="timeline" type="button">timeline</button>
+    </div>
+
+    <div class="views">
+      <!-- ── Catalog view ── -->
+      <div id="view-catalog" class="view active">
+        <div class="table-header">
+          <span class="col-header col-thumb"></span>
+          <span class="col-header">title</span>
+          <span class="col-header">project</span>
+          <span class="col-header col-type">type</span>
+          <span class="col-header col-instruments">component</span>
+          <span class="col-header" style="text-align:right">date</span>
+        </div>
+        <div class="video-list" id="video-list">
+          {videos.length === 0
+            ? (
+              <div class="empty-state">
+                <span>no videos yet.</span>
+                <span>run <code>npm run fetch-videos</code> to populate the catalog.</span>
+              </div>
+            )
+            : videos.map(v => (
+              <VideoCard
+                id={v.id} title={v.title} publishedAt={v.publishedAt}
+                thumbnail={v.thumbnail} youtubeUrl={v.youtubeUrl}
+                duration={v.duration} project={v.project}
+                videoType={v.videoType} instruments={v.instruments ?? []}
+              />
+            ))
+          }
+        </div>
+      </div>
+
+      <!-- ── Timeline view ── -->
+      <div id="view-timeline" class="view">
+        <!-- Legend -->
+        <div class="year-header" style="position:static; background:var(--bg); border-bottom: 1px solid var(--border);">
+          <div class="tl-legend">
+            {Object.entries(projectColors).map(([name, color]) => (
+              <span class="legend-item">
+                <span class="legend-dot" style={`background:${color}`}></span>
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {timelineYears.map(year => (
+          <div class="timeline-year" data-year={year}>
+            <div class="year-header">
+              <span class="year-label">{year}</span>
+              <span class="year-count" id={`ycount-${year}`}>{byYear[year].length}</span>
+            </div>
+            {byYear[year].map(v => (
+              <a
+                class="timeline-entry"
+                href={v.youtubeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-id={v.id}
+                data-project={v.project}
+                data-type={v.videoType}
+                data-instruments={(v.instruments ?? []).join(',')}
+              >
+                <span class="tl-date">{tlDate(v.publishedAt)}</span>
+                <span></span>
+                <div class="tl-body">
+                  <span class="tl-title">{v.title}</span>
+                  <div class="tl-meta">
+                    <span class="tl-project">{v.project}</span>
+                    {(v.instruments ?? []).slice(0, 4).map(i => (
+                      <span class="tl-tag">{titleCase(i)}</span>
+                    ))}
+                  </div>
+                </div>
+                <span class="tl-type">{titleCase(v.videoType ?? '')}</span>
+              </a>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ── DOM refs ──────────────────────────────────────────────────────────
+    const list      = document.getElementById('video-list')!;
+    const countEl   = document.getElementById('results-count')!;
+    const catalogRows   = Array.from(list.querySelectorAll<HTMLElement>('.video-row'));
+    const timelineEntries = Array.from(document.querySelectorAll<HTMLElement>('.timeline-entry'));
+
+    // ── Filter state ──────────────────────────────────────────────────────
+    let activeProjects:    Set<string> = new Set();
+    let activeTypes:       Set<string> = new Set();
+    let activeInstruments: Set<string> = new Set();
+
+    // ── Filter + count ────────────────────────────────────────────────────
+    function applyFilters() {
+      const pCount: Record<string, number> = {};
+      const tCount: Record<string, number> = {};
+      const iCount: Record<string, number> = {};
+      let visible = 0;
+
+      for (const row of catalogRows) {
+        const rowProject     = row.dataset.project ?? '';
+        const rowType        = row.dataset.type ?? '';
+        const rowInstruments = (row.dataset.instruments ?? '').split(',').filter(Boolean);
+
+        const show = (activeProjects.size === 0 || activeProjects.has(rowProject))
+                  && (activeTypes.size === 0     || activeTypes.has(rowType))
+                  && (activeInstruments.size === 0 || rowInstruments.some(i => activeInstruments.has(i)));
+
+        row.classList.toggle('hidden', !show);
+
+        if (show) {
+          visible++;
+          pCount[rowProject] = (pCount[rowProject] ?? 0) + 1;
+          tCount[rowType]    = (tCount[rowType]    ?? 0) + 1;
+          rowInstruments.forEach(i => { iCount[i] = (iCount[i] ?? 0) + 1; });
+        }
+      }
+
+      // Sync timeline entries (same filter, no double-counting)
+      for (const entry of timelineEntries) {
+        const rowProject     = entry.dataset.project ?? '';
+        const rowType        = entry.dataset.type ?? '';
+        const rowInstruments = (entry.dataset.instruments ?? '').split(',').filter(Boolean);
+
+        const show = (activeProjects.size === 0 || activeProjects.has(rowProject))
+                  && (activeTypes.size === 0     || activeTypes.has(rowType))
+                  && (activeInstruments.size === 0 || rowInstruments.some(i => activeInstruments.has(i)));
+
+        entry.classList.toggle('hidden', !show);
+      }
+
+      // Update year group visibility + counts
+      document.querySelectorAll<HTMLElement>('.timeline-year').forEach(yearEl => {
+        const year = yearEl.dataset.year!;
+        const visibleInYear = Array.from(yearEl.querySelectorAll('.timeline-entry'))
+          .filter(el => !el.classList.contains('hidden')).length;
+        yearEl.classList.toggle('hidden', visibleInYear === 0);
+        const countSpan = document.getElementById(`ycount-${year}`);
+        if (countSpan) countSpan.textContent = String(visibleInYear);
+      });
+
+      countEl.textContent = visible === catalogRows.length
+        ? `${catalogRows.length} videos`
+        : `${visible} / ${catalogRows.length}`;
+
+      document.querySelectorAll<HTMLElement>('[data-count-project]').forEach(el => {
+        const n = pCount[el.dataset.countProject ?? ''] ?? 0;
+        el.textContent = String(n);
+        el.closest('label')?.classList.toggle('zero', n === 0);
+      });
+
+      document.querySelectorAll<HTMLElement>('[data-count-type]').forEach(el => {
+        const n = tCount[el.dataset.countType ?? ''] ?? 0;
+        el.textContent = String(n);
+        el.closest('label')?.classList.toggle('zero', n === 0);
+      });
+
+      document.querySelectorAll<HTMLElement>('[data-count-instrument]').forEach(el => {
+        const n = iCount[el.dataset.countInstrument ?? ''] ?? 0;
+        el.textContent = String(n);
+        el.closest('label')?.classList.toggle('zero', n === 0 && activeInstruments.size > 0);
+      });
+    }
+
+    // ── Tab switching ─────────────────────────────────────────────────────
+    document.querySelectorAll<HTMLButtonElement>('.tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`view-${btn.dataset.tab}`)?.classList.add('active');
+      });
+    });
+
+    // ── Checkboxes ────────────────────────────────────────────────────────
+    document.querySelectorAll<HTMLInputElement>('[data-filter]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        cb.closest('label')?.classList.toggle('active', cb.checked);
+        const target =
+          cb.dataset.filter === 'project'    ? activeProjects    :
+          cb.dataset.filter === 'type'       ? activeTypes       :
+          cb.dataset.filter === 'instrument' ? activeInstruments : null;
+        if (!target) return;
+        if (cb.checked) target.add(cb.value);
+        else            target.delete(cb.value);
+        applyFilters();
+      });
+    });
+  </script>
+</Base>

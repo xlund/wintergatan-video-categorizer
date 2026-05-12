@@ -1,0 +1,63 @@
+---
+interface Props {
+  id: string;
+  title: string;
+  publishedAt: string;
+  thumbnail: string;
+  youtubeUrl: string;
+  duration: string;
+  project: string;
+  videoType: string;
+  instruments: string[];
+}
+
+const {
+  id,
+  title,
+  publishedAt,
+  thumbnail,
+  youtubeUrl,
+  duration,
+  project,
+  videoType,
+  instruments,
+} = Astro.props;
+
+const date = new Date(publishedAt).toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'short',
+});
+
+const titleCase = (s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+---
+
+<a
+  class="video-row"
+  href={youtubeUrl}
+  target="_blank"
+  rel="noopener noreferrer"
+  data-id={id}
+  data-project={project}
+  data-type={videoType}
+  data-instruments={instruments.join(',')}
+>
+  <div class="row-cell row-thumb">
+    {thumbnail
+      ? <img src={thumbnail} alt="" loading="lazy" />
+      : <div class="thumb-placeholder">▶</div>
+    }
+  </div>
+
+  <div class="row-cell">
+    <span class="row-title">{title}</span>
+  </div>
+
+  <div class="row-cell row-project">{project}</div>
+  <div class="row-cell row-type">{titleCase(videoType ?? '')}</div>
+
+  <div class="row-cell row-instruments">
+    {instruments.map(i => <span class="instr-tag">{titleCase(i)}</span>)}
+  </div>
+
+  <div class="row-cell row-date">{date}</div>
+</a>
