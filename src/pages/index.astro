@@ -77,12 +77,17 @@ const projectColors: Record<string, string> = {
   </header>
 
   <aside class="sidebar">
+    <div class="filter-section">
+      <span class="filter-label">Search</span>
+      <input class="search-input" id="title-search" type="text" placeholder="Video title…" autocomplete="off" spellcheck="false" />
+    </div>
+
     {instruments.length > 0 && (
       <div class="filter-section">
         <span class="filter-label">Component</span>
         <div class="combo" id="instrument-combo" data-instruments={JSON.stringify(instruments)}>
           <div class="combo-trigger">
-            <input class="combo-input" type="text" placeholder="Search…" autocomplete="off" spellcheck="false" />
+            <input class="combo-input" type="text" placeholder="Filter on component…" autocomplete="off" spellcheck="false" />
           </div>
           <ul class="combo-list" hidden></ul>
         </div>
@@ -143,6 +148,7 @@ const projectColors: Record<string, string> = {
             data-project={v.project}
             data-type={v.videoType}
             data-instruments={(v.instruments ?? []).join(',')}
+            data-title={v.title.toLowerCase()}
           >
             <span class="tl-date">{fmtDate(v.publishedAt)}</span>
 
@@ -178,6 +184,8 @@ const projectColors: Record<string, string> = {
   </main>
 
   <script>
+    import Fuse from 'fuse.js';
+
     const countEl        = document.getElementById('results-count')!;
     const entries        = Array.from(document.querySelectorAll<HTMLElement>('.timeline-entry'));
     const timelineScroll = document.querySelector<HTMLElement>('.timeline-scroll')!;
@@ -187,7 +195,13 @@ const projectColors: Record<string, string> = {
     let activeProjects:    Set<string> = new Set();
     let activeTypes:       Set<string> = new Set();
     let activeInstruments: Set<string> = new Set();
+    let searchMatchIds:    Set<string> | null = null;
     let lastICount: Record<string, number> = {};
+
+    const fuse = new Fuse(
+      entries.map(el => ({ id: el.dataset.id!, title: el.dataset.title! })),
+      { keys: ['title'], threshold: 0.3, includeScore: false }
+    );
 
     function updateActiveYear() {
       const containerTop = timelineScroll.getBoundingClientRect().top;
@@ -221,7 +235,8 @@ const projectColors: Record<string, string> = {
         const show =
           (activeProjects.size === 0    || activeProjects.has(proj))
           && (activeTypes.size === 0    || activeTypes.has(type))
-          && (activeInstruments.size === 0 || instr.some(i => activeInstruments.has(i)));
+          && (activeInstruments.size === 0 || instr.some(i => activeInstruments.has(i)))
+          && (searchMatchIds === null    || searchMatchIds.has(el.dataset.id ?? ''));
 
         el.classList.toggle('hidden', !show);
 
@@ -374,6 +389,16 @@ const projectColors: Record<string, string> = {
           buildList('');
           applyFilters();
         }
+      });
+    }
+
+    // Title search
+    const searchEl = document.getElementById('title-search') as HTMLInputElement | null;
+    if (searchEl) {
+      searchEl.addEventListener('input', () => {
+        const q = searchEl.value.trim();
+        searchMatchIds = q ? new Set(fuse.search(q).map(r => r.item.id)) : null;
+        applyFilters();
       });
     }
   </script>

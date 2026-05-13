@@ -190,6 +190,30 @@ body {
   color: var(--text-muted);
 }
 
+/* ── Search input ────────────────────── */
+
+.search-input {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  outline: none;
+  caret-color: var(--accent);
+  transition: border-color 0.1s;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+}
+
 /* ── Year strip ──────────────────────── */
 
 .year-strip {
