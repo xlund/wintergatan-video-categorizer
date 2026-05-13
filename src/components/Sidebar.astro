@@ -1,0 +1,47 @@
+---
+import { tc } from '../lib/utils';
+
+interface Instrument { name: string; count: number; }
+interface Props {
+  instruments: Instrument[];
+  videoTypes: string[];
+  typeCounts: Record<string, number>;
+}
+const { instruments, videoTypes, typeCounts } = Astro.props;
+---
+
+<aside class="sidebar">
+  <div class="filter-section">
+    <span class="filter-label">Search</span>
+    <input class="search-input" id="title-search" type="text" placeholder="Video title…" autocomplete="off" spellcheck="false" />
+  </div>
+
+  {instruments.length > 0 && (
+    <div class="filter-section">
+      <span class="filter-label">Component</span>
+      <div class="combo" id="instrument-combo" data-instruments={JSON.stringify(instruments)}>
+        <div class="combo-trigger">
+          <input class="combo-input" type="text" placeholder="Filter on component…" autocomplete="off" spellcheck="false" />
+        </div>
+        <ul class="combo-list" hidden></ul>
+      </div>
+    </div>
+  )}
+
+  {videoTypes.length > 0 && (
+    <div class="filter-section">
+      <span class="filter-label">Type</span>
+      <ul class="filter-list">
+        {videoTypes.map(t => (
+          <li>
+            <label>
+              <input type="checkbox" data-filter="type" value={t} />
+              {tc(t)}
+              <span class="filter-count" data-count-type={t}>{typeCounts[t]}</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</aside>

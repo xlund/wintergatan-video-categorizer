@@ -1,0 +1,13 @@
+---
+interface Props { projectColors: Record<string, string>; }
+const { projectColors } = Astro.props;
+---
+
+<div class="tl-legend">
+  {Object.entries(projectColors).map(([name, color]) => (
+    <button class="legend-item" type="button" data-project={name}>
+      <span class="legend-dot" style={`background:${color}`}></span>
+      {name}
+    </button>
+  ))}
+</div>

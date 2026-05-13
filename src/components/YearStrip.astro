@@ -1,0 +1,10 @@
+---
+interface Props { years: number[]; }
+const { years } = Astro.props;
+---
+
+<div class="year-strip">
+  {years.map(year => (
+    <button class="year-nav-btn" type="button" data-nav-year={year}>{year}</button>
+  ))}
+</div>

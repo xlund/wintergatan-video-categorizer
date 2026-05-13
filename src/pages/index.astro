@@ -1,5 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import Sidebar from '../components/Sidebar.astro';
+import YearStrip from '../components/YearStrip.astro';
+import ProjectLegend from '../components/ProjectLegend.astro';
+import TimelineYear from '../components/TimelineYear.astro';
 import videosRaw from '../data/videos.json';
 
 interface Video {
@@ -8,15 +13,6 @@ interface Video {
   youtubeUrl: string; duration: string;
   project: string; videoType: string; instruments: string[];
 }
-
-const tc = (s: string) =>
-  s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-
-const tagColorIdx = (name: string): number => {
-  let h = 0;
-  for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
-  return h % 8;
-};
 
 const videos = (videosRaw as Video[]).sort(
   (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
@@ -28,9 +24,13 @@ const instrCounts: Record<string, number> = {};
 videos.forEach(v => (v.instruments ?? []).forEach(i => {
   instrCounts[i] = (instrCounts[i] ?? 0) + 1;
 }));
-const instruments = Object.entries(instrCounts)
-  .sort((a, b) => a[0].localeCompare(b[0]))
-  .map(([name, count]) => ({ name, count }));
+const noInstrCount = videos.filter(v => (v.instruments ?? []).length === 0).length;
+const instruments = [
+  { name: 'uncategorized', count: noInstrCount },
+  ...Object.entries(instrCounts)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([name, count]) => ({ name, count })),
+];
 
 const typeCounts = Object.fromEntries(
   videoTypes.map(t => [t, videos.filter(v => v.videoType === t).length])
@@ -42,9 +42,6 @@ videos.forEach(v => {
   (byYear[y] ??= []).push(v);
 });
 const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
-
-const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
 const projectColors: Record<string, string> = {
   'Marble Machine 3': 'var(--c-mm3)',
@@ -59,117 +56,18 @@ const projectColors: Record<string, string> = {
 ---
 
 <Base>
-  <header class="site-header">
-    <span class="site-title">wintergatan / <span>catalog</span></span>
-    <div class="header-right">
-      <div class="theme-switch" role="group" aria-label="Color theme">
-        <button class="theme-seg" data-val="light" type="button">light</button>
-        <button class="theme-seg" data-val="system" type="button">auto</button>
-        <button class="theme-seg" data-val="dark" type="button">dark</button>
-      </div>
-      <span class="header-meta" id="results-count">{videos.length} videos</span>
-    </div>
-  </header>
+  <SiteHeader videoCount={videos.length} />
 
-  <aside class="sidebar">
-    <div class="filter-section">
-      <span class="filter-label">Search</span>
-      <input class="search-input" id="title-search" type="text" placeholder="Video title…" autocomplete="off" spellcheck="false" />
-    </div>
-
-    {instruments.length > 0 && (
-      <div class="filter-section">
-        <span class="filter-label">Component</span>
-        <div class="combo" id="instrument-combo" data-instruments={JSON.stringify(instruments)}>
-          <div class="combo-trigger">
-            <input class="combo-input" type="text" placeholder="Filter on component…" autocomplete="off" spellcheck="false" />
-          </div>
-          <ul class="combo-list" hidden></ul>
-        </div>
-      </div>
-    )}
-
-{videoTypes.length > 0 && (
-      <div class="filter-section">
-        <span class="filter-label">Type</span>
-        <ul class="filter-list">
-          {videoTypes.map(t => (
-            <li>
-              <label>
-                <input type="checkbox" data-filter="type" value={t} />
-                {tc(t)}
-                <span class="filter-count" data-count-type={t}>{typeCounts[t]}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
-
-  </aside>
+  <Sidebar instruments={instruments} videoTypes={videoTypes} typeCounts={typeCounts} />
 
   <main class="main-content">
-    <!-- Year strip -->
-    <div class="year-strip">
-      {years.map(year => (
-        <button class="year-nav-btn" type="button" data-nav-year={year}>{year}</button>
-      ))}
-    </div>
+    <YearStrip years={years} />
+    <ProjectLegend projectColors={projectColors} />
 
-    <!-- Legend -->
-    <div class="tl-legend">
-      {Object.entries(projectColors).map(([name, color]) => (
-        <button class="legend-item" type="button" data-project={name}>
-          <span class="legend-dot" style={`background:${color}`}></span>
-          {name}
-        </button>
-      ))}
-    </div>
-
-    <!-- Timeline -->
     <div class="timeline-scroll">
-    {years.map(year => (
-      <div class="timeline-year" data-year={year}>
-        <div class="year-header">
-          <span class="year-label">{year}</span>
-          <span class="year-count" id={`yc-${year}`}>{byYear[year].length}</span>
-        </div>
-        <div class="scroll-content">
-
-        {byYear[year].map(v => (
-          <div
-            class="timeline-entry"
-            data-id={v.id}
-            data-project={v.project}
-            data-type={v.videoType}
-            data-instruments={(v.instruments ?? []).join(',')}
-            data-title={v.title.toLowerCase()}
-          >
-            <span class="tl-date">{fmtDate(v.publishedAt)}</span>
-
-            {v.thumbnail
-              ? <a class="tl-thumb-link" href={v.youtubeUrl} target="_blank" rel="noopener noreferrer" aria-label={v.title} tabindex="-1">
-                  <img class="tl-thumb" src={v.thumbnail} alt="" loading="lazy" />
-                </a>
-              : <div class="tl-thumb-placeholder"></div>
-            }
-
-            <div class="tl-body">
-              <a class="tl-title" href={v.youtubeUrl} target="_blank" rel="noopener noreferrer">{v.title}</a>
-            </div>
-
-            <div class="tl-meta">
-              {(v.instruments ?? []).slice(0, 5).map(i => (
-                <span class="tl-tag" data-color={tagColorIdx(i)}>{tc(i)}</span>
-              ))}
-            </div>
-
-            <span class="tl-type">{tc(v.videoType ?? '')}</span>
-          </div>
-        ))}
-        </div>
-      </div>
-    ))}
+      {years.map(year => (
+        <TimelineYear year={year} videos={byYear[year]} />
+      ))}
     </div>
   </main>
 
@@ -216,16 +114,23 @@ const projectColors: Record<string, string> = {
       const tCount: Record<string, number> = {};
       const iCount: Record<string, number> = {};
       let visible = 0;
+      let uncategorizedVisible = 0;
+      const hasUncategorized = activeInstruments.has('uncategorized');
+      const realInstruments = [...activeInstruments].filter(i => i !== 'uncategorized');
 
       for (const el of entries) {
         const proj  = el.dataset.project ?? '';
         const type  = el.dataset.type ?? '';
         const instr = (el.dataset.instruments ?? '').split(',').filter(Boolean);
 
+        const instrMatch =
+          activeInstruments.size === 0
+          || (hasUncategorized ? instr.length === 0 : realInstruments.every(i => instr.includes(i)));
+
         const show =
           (activeProjects.size === 0    || activeProjects.has(proj))
           && (activeTypes.size === 0    || activeTypes.has(type))
-          && (activeInstruments.size === 0 || [...activeInstruments].every(i => instr.includes(i)))
+          && instrMatch
           && (searchMatchIds === null    || searchMatchIds.has(el.dataset.id ?? ''));
 
         el.classList.toggle('hidden', !show);
@@ -233,10 +138,12 @@ const projectColors: Record<string, string> = {
         if (show) {
           visible++;
           tCount[type] = (tCount[type] ?? 0) + 1;
-          instr.forEach(i => { iCount[i] = (iCount[i] ?? 0) + 1; });
+          if (instr.length === 0) uncategorizedVisible++;
+          else instr.forEach(i => { iCount[i] = (iCount[i] ?? 0) + 1; });
         }
       }
 
+      iCount['uncategorized'] = uncategorizedVisible;
       lastICount = { ...iCount };
 
       document.querySelectorAll<HTMLElement>('.timeline-year').forEach(yr => {

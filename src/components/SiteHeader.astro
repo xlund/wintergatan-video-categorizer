@@ -1,0 +1,16 @@
+---
+interface Props { videoCount: number; }
+const { videoCount } = Astro.props;
+---
+
+<header class="site-header">
+  <span class="site-title">wintergatan / <span>catalog</span></span>
+  <div class="header-right">
+    <div class="theme-switch" role="group" aria-label="Color theme">
+      <button class="theme-seg" data-val="light" type="button">light</button>
+      <button class="theme-seg" data-val="system" type="button">auto</button>
+      <button class="theme-seg" data-val="dark" type="button">dark</button>
+    </div>
+    <span class="header-meta" id="results-count">{videoCount} videos</span>
+  </div>
+</header>

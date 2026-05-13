@@ -37,26 +37,26 @@
 }
 
 [data-theme="light"] {
-  --bg:         #f4f4f5;
-  --surface:    #e8e8ea;
+  --bg: #f4f4f5;
+  --surface: #e8e8ea;
   --surface-hi: #dcdcde;
-  --border:     #c4c4c8;
+  --border: #c4c4c8;
   --border-dim: #dcdcde;
 
-  --text:       #18181b;
-  --text-sub:   #52525b;
+  --text: #18181b;
+  --text-sub: #52525b;
   --text-muted: #a1a1aa;
 
-  --accent:     #4f56cc;
+  --accent: #4f56cc;
   --accent-dim: rgba(79, 86, 204, 0.12);
 
-  --c-mmx:   #3d8a3d;
-  --c-mm3:   #2563a8;
-  --c-mm:    #b45309;
-  --c-band:  #7c3aed;
-  --c-klok:  #0e7490;
+  --c-mmx: #3d8a3d;
+  --c-mm3: #2563a8;
+  --c-mm: #b45309;
+  --c-band: #7c3aed;
+  --c-klok: #0e7490;
   --c-cyber: #c2410c;
-  --c-mbox:  #be123c;
+  --c-mbox: #be123c;
   --c-other: #71717a;
 }
 
@@ -574,10 +574,10 @@ body {
 
 .timeline-entry {
   display: grid;
-  grid-template-columns: 52px 76px minmax(120px, 1fr) minmax(0, auto) minmax(80px, auto);
+  grid-template-columns: 52px 100px minmax(120px, 1fr) minmax(0, auto) minmax(80px, auto);
   align-items: center;
   min-height: 62px;
-  padding: 0rem 1.75rem 0rem calc(1.75rem - 3px);
+  padding: 0.5rem 1.75rem 0.5rem calc(1.75rem - 3px);
   border-bottom: 1px solid var(--border-dim);
   border-left: 3px solid transparent;
   text-decoration: none;
@@ -587,8 +587,7 @@ body {
 }
 
 .tl-thumb {
-  width: 72px;
-  height: 40px;
+  width: 100%;
   object-fit: cover;
   border-radius: 4px;
   border: 1px solid var(--border);
@@ -720,24 +719,102 @@ body {
 }
 
 /* Dark tag colors (default) */
-.tl-tag[data-color="0"] { background: #1e2d4a; color: #60a5fa; border-color: #2a4a7a; }
-.tl-tag[data-color="1"] { background: #1a2e20; color: #4ade80; border-color: #265e35; }
-.tl-tag[data-color="2"] { background: #2e2010; color: #fbbf24; border-color: #5a3e10; }
-.tl-tag[data-color="3"] { background: #241535; color: #c084fc; border-color: #4a2a6a; }
-.tl-tag[data-color="4"] { background: #0e2530; color: #22d3ee; border-color: #164a5a; }
-.tl-tag[data-color="5"] { background: #2e1a0e; color: #fb923c; border-color: #5a3218; }
-.tl-tag[data-color="6"] { background: #2a0e1e; color: #f472b6; border-color: #5a1a3a; }
-.tl-tag[data-color="7"] { background: #1a2a1a; color: #86efac; border-color: #285a30; }
+.tl-tag[data-color="0"] {
+  background: #1e2d4a;
+  color: #60a5fa;
+  border-color: #2a4a7a;
+}
+
+.tl-tag[data-color="1"] {
+  background: #1a2e20;
+  color: #4ade80;
+  border-color: #265e35;
+}
+
+.tl-tag[data-color="2"] {
+  background: #2e2010;
+  color: #fbbf24;
+  border-color: #5a3e10;
+}
+
+.tl-tag[data-color="3"] {
+  background: #241535;
+  color: #c084fc;
+  border-color: #4a2a6a;
+}
+
+.tl-tag[data-color="4"] {
+  background: #0e2530;
+  color: #22d3ee;
+  border-color: #164a5a;
+}
+
+.tl-tag[data-color="5"] {
+  background: #2e1a0e;
+  color: #fb923c;
+  border-color: #5a3218;
+}
+
+.tl-tag[data-color="6"] {
+  background: #2a0e1e;
+  color: #f472b6;
+  border-color: #5a1a3a;
+}
+
+.tl-tag[data-color="7"] {
+  background: #1a2a1a;
+  color: #86efac;
+  border-color: #285a30;
+}
 
 /* Light (neutral) tag colors */
-[data-theme="light"] .tl-tag[data-color="0"] { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
-[data-theme="light"] .tl-tag[data-color="1"] { background: #dcfce7; color: #166534; border-color: #86efac; }
-[data-theme="light"] .tl-tag[data-color="2"] { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
-[data-theme="light"] .tl-tag[data-color="3"] { background: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
-[data-theme="light"] .tl-tag[data-color="4"] { background: #cffafe; color: #155e75; border-color: #67e8f9; }
-[data-theme="light"] .tl-tag[data-color="5"] { background: #ffedd5; color: #9a3412; border-color: #fdba74; }
-[data-theme="light"] .tl-tag[data-color="6"] { background: #ffe4e6; color: #9f1239; border-color: #fda4af; }
-[data-theme="light"] .tl-tag[data-color="7"] { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+[data-theme="light"] .tl-tag[data-color="0"] {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+[data-theme="light"] .tl-tag[data-color="1"] {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+[data-theme="light"] .tl-tag[data-color="2"] {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+[data-theme="light"] .tl-tag[data-color="3"] {
+  background: #ede9fe;
+  color: #5b21b6;
+  border-color: #c4b5fd;
+}
+
+[data-theme="light"] .tl-tag[data-color="4"] {
+  background: #cffafe;
+  color: #155e75;
+  border-color: #67e8f9;
+}
+
+[data-theme="light"] .tl-tag[data-color="5"] {
+  background: #ffedd5;
+  color: #9a3412;
+  border-color: #fdba74;
+}
+
+[data-theme="light"] .tl-tag[data-color="6"] {
+  background: #ffe4e6;
+  color: #9f1239;
+  border-color: #fda4af;
+}
+
+[data-theme="light"] .tl-tag[data-color="7"] {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #6ee7b7;
+}
 
 .tl-type {
   font-size: 0.75rem;
@@ -770,7 +847,7 @@ body {
 /* ── Responsive ──────────────────────── */
 
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   body {
     grid-template-areas: "header" "main";
     grid-template-columns: 1fr;
