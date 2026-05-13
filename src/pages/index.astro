@@ -127,19 +127,18 @@ const projectColors: Record<string, string> = {
     </div>
 
     <!-- Timeline -->
+    <div class="timeline-scroll">
     {years.map(year => (
       <div class="timeline-year" data-year={year}>
         <div class="year-header">
           <span class="year-label">{year}</span>
           <span class="year-count" id={`yc-${year}`}>{byYear[year].length}</span>
         </div>
+        <div class="scroll-content">
 
         {byYear[year].map(v => (
-          <a
+          <div
             class="timeline-entry"
-            href={v.youtubeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
             data-id={v.id}
             data-project={v.project}
             data-type={v.videoType}
@@ -148,53 +147,54 @@ const projectColors: Record<string, string> = {
             <span class="tl-date">{fmtDate(v.publishedAt)}</span>
 
             {v.thumbnail
-              ? <img class="tl-thumb" src={v.thumbnail} alt="" loading="lazy" />
+              ? <a class="tl-thumb-link" href={v.youtubeUrl} target="_blank" rel="noopener noreferrer" aria-label={v.title} tabindex="-1">
+                  <img class="tl-thumb" src={v.thumbnail} alt="" loading="lazy" />
+                </a>
               : <div class="tl-thumb-placeholder"></div>
             }
 
             <div class="tl-body">
-              <span class="tl-title">{v.title}</span>
-              <div class="tl-meta">
-                {(v.instruments ?? []).slice(0, 5).map(i => {
-                  const { bg, text, border } = tagColor(i);
-                  return (
-                    <span class="tl-tag" style={`background:${bg};color:${text};border-color:${border}`}>
-                      {tc(i)}
-                    </span>
-                  );
-                })}
-              </div>
+              <a class="tl-title" href={v.youtubeUrl} target="_blank" rel="noopener noreferrer">{v.title}</a>
+            </div>
+
+            <div class="tl-meta">
+              {(v.instruments ?? []).slice(0, 5).map(i => {
+                const { bg, text, border } = tagColor(i);
+                return (
+                  <span class="tl-tag" style={`background:${bg};color:${text};border-color:${border}`}>
+                    {tc(i)}
+                  </span>
+                );
+              })}
             </div>
 
             <span class="tl-type">{tc(v.videoType ?? '')}</span>
-          </a>
+          </div>
         ))}
+        </div>
       </div>
     ))}
+    </div>
   </main>
 
   <script>
-    const countEl    = document.getElementById('results-count')!;
-    const entries    = Array.from(document.querySelectorAll<HTMLElement>('.timeline-entry'));
-    const mainContent = document.querySelector<HTMLElement>('.main-content')!;
-    const yearNavBtns = Array.from(document.querySelectorAll<HTMLElement>('.year-nav-btn'));
+    const countEl        = document.getElementById('results-count')!;
+    const entries        = Array.from(document.querySelectorAll<HTMLElement>('.timeline-entry'));
+    const timelineScroll = document.querySelector<HTMLElement>('.timeline-scroll')!;
+    const yearStrip      = document.querySelector<HTMLElement>('.year-strip')!;
+    const yearNavBtns    = Array.from(document.querySelectorAll<HTMLElement>('.year-nav-btn'));
 
     let activeProjects:    Set<string> = new Set();
     let activeTypes:       Set<string> = new Set();
     let activeInstruments: Set<string> = new Set();
     let lastICount: Record<string, number> = {};
 
-    const yearStrip  = document.querySelector<HTMLElement>('.year-strip')!;
-    const legendEl   = document.querySelector<HTMLElement>('.tl-legend')!;
-    const STRIP_H    = yearStrip.offsetHeight + legendEl.offsetHeight;
-    document.documentElement.style.setProperty('--sticky-h', `${STRIP_H}px`);
-
     function updateActiveYear() {
-      const containerTop = mainContent.getBoundingClientRect().top;
+      const containerTop = timelineScroll.getBoundingClientRect().top;
       const yearEls = Array.from(document.querySelectorAll<HTMLElement>('.timeline-year:not(.hidden)'));
       let active: string | null = null;
       for (const yr of yearEls) {
-        if (yr.getBoundingClientRect().top - containerTop <= STRIP_H + 1) active = yr.dataset.year ?? null;
+        if (yr.getBoundingClientRect().top - containerTop <= 1) active = yr.dataset.year ?? null;
       }
       yearNavBtns.forEach(btn => {
         const isActive = btn.dataset.navYear === active;
@@ -293,12 +293,12 @@ const projectColors: Record<string, string> = {
       btn.addEventListener('click', () => {
         const yr = document.querySelector<HTMLElement>(`.timeline-year[data-year="${btn.dataset.navYear}"]`);
         if (!yr) return;
-        const top = yr.getBoundingClientRect().top - mainContent.getBoundingClientRect().top + mainContent.scrollTop - STRIP_H;
-        mainContent.scrollTo({ top, behavior: 'smooth' });
+        const top = yr.getBoundingClientRect().top - timelineScroll.getBoundingClientRect().top + timelineScroll.scrollTop;
+        timelineScroll.scrollTo({ top, behavior: 'smooth' });
       });
     });
 
-    mainContent.addEventListener('scroll', updateActiveYear, { passive: true });
+    timelineScroll.addEventListener('scroll', updateActiveYear, { passive: true });
     updateActiveYear();
 
     // Instrument combobox

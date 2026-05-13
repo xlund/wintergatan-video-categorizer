@@ -18,6 +18,17 @@ const raw = JSON.parse(readFileSync(join(__dirname, 'data/raw_videos.json'), 'ut
 //            "channel-update" | "educational" | "inspiration" | "philosophical" |
 //            "live-stream"
 // instruments: specific instruments/components being discussed or tested
+//   Musical: accordion banjo bass cyber-bass drums guitar hackbrett harp hi-hat kick-drum
+//            melodica musical-saw ondophone percussion sizzle-cymbal snare-drum strings
+//            tambourine vibraphone violin
+//   Machine components: bearings bowden-cable clock clutch collapsable-wheel conveyor-belt
+//            counterweight damper drivetrain escapement flyball-governor flywheel frame gears
+//            lego magnets marble-demagnetizer marble-divider marble-funnel marble-gates
+//            marble-lift marble-loop marble-release marble-tracks motor muting-system
+//            paper-pull-mechanism pedal programming-wheel resonator rhythm-machine
+//            timing trigger-mechanism vibrato
+//   Engineering: machining wiring
+//   Other: other
 // tags: freeform search keywords
 
 const CAT = {
