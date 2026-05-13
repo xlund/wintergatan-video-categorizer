@@ -13,6 +13,34 @@ const { title = 'Wintergatan Video Catalog' } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
+     <link
+    rel="icon"
+    type="image/png"
+    sizes="32x32"
+    href={`${Astro.site?.pathname ?? ''}/favicons/favicon-32x32.png`}
+  />
+
+  <link
+    rel="icon"
+    type="image/png"
+    sizes="16x16"
+    href={`${Astro.site?.pathname ?? ''}/favicons/favicon-16x16.png`}
+  />
+
+  <link
+    rel="apple-touch-icon"
+    href={`${Astro.site?.pathname ?? ''}/favicons/apple-touch-icon.png`}
+  />
+
+  <link
+    rel="manifest"
+    href={`${Astro.site?.pathname ?? ''}/favicons/site.webmanifest`}
+  />
+
+  <link
+    rel="shortcut icon"
+    href={`${Astro.site?.pathname ?? ''}/favicons/favicon.ico`}
+  />
     <script is:inline>
       (function(){
         var t = localStorage.getItem('theme');

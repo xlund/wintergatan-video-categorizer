@@ -7,7 +7,14 @@
       "Bash(npm run *)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(grep -E '\\\\.\\(ts|tsx|js|json\\)$')",
+      "Bash(python3 -c ' *)",
+      "Bash(git -C /Users/nsld/dev/wintergatan log --oneline --all)",
+      "Bash(git -C /Users/nsld/dev/wintergatan show --stat HEAD~10 HEAD~9 HEAD~8 HEAD~7 HEAD~6 HEAD~5 HEAD~4 HEAD~3 HEAD~2 HEAD~1 HEAD)",
+      "Bash(git -C /Users/nsld/dev/wintergatan show c7c6dca:src/data/videos.json)",
+      "Bash(git -C /Users/nsld/dev/wintergatan show 1df5e83:src/data/videos.json)",
+      "Bash(git -C /Users/nsld/dev/wintergatan show 056d40f5:src/data/videos.json)"
     ]
   }
 }
