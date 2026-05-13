@@ -12,21 +12,10 @@ interface Video {
 const tc = (s: string) =>
   s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-const TAG_COLORS = [
-  { bg: '#1e2d4a', text: '#60a5fa', border: '#2a4a7a' },
-  { bg: '#1a2e20', text: '#4ade80', border: '#265e35' },
-  { bg: '#2e2010', text: '#fbbf24', border: '#5a3e10' },
-  { bg: '#241535', text: '#c084fc', border: '#4a2a6a' },
-  { bg: '#0e2530', text: '#22d3ee', border: '#164a5a' },
-  { bg: '#2e1a0e', text: '#fb923c', border: '#5a3218' },
-  { bg: '#2a0e1e', text: '#f472b6', border: '#5a1a3a' },
-  { bg: '#1a2a1a', text: '#86efac', border: '#285a30' },
-];
-
-const tagColor = (name: string) => {
+const tagColorIdx = (name: string): number => {
   let h = 0;
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
-  return TAG_COLORS[h % TAG_COLORS.length];
+  return h % 8;
 };
 
 const videos = (videosRaw as Video[]).sort(
@@ -72,7 +61,14 @@ const projectColors: Record<string, string> = {
 <Base>
   <header class="site-header">
     <span class="site-title">wintergatan / <span>catalog</span></span>
-    <span class="header-meta" id="results-count">{videos.length} videos</span>
+    <div class="header-right">
+      <div class="theme-switch" role="group" aria-label="Color theme">
+        <button class="theme-seg" data-val="light" type="button">light</button>
+        <button class="theme-seg" data-val="system" type="button">auto</button>
+        <button class="theme-seg" data-val="dark" type="button">dark</button>
+      </div>
+      <span class="header-meta" id="results-count">{videos.length} videos</span>
+    </div>
   </header>
 
   <aside class="sidebar">
@@ -163,14 +159,9 @@ const projectColors: Record<string, string> = {
             </div>
 
             <div class="tl-meta">
-              {(v.instruments ?? []).slice(0, 5).map(i => {
-                const { bg, text, border } = tagColor(i);
-                return (
-                  <span class="tl-tag" style={`background:${bg};color:${text};border-color:${border}`}>
-                    {tc(i)}
-                  </span>
-                );
-              })}
+              {(v.instruments ?? []).slice(0, 5).map(i => (
+                <span class="tl-tag" data-color={tagColorIdx(i)}>{tc(i)}</span>
+              ))}
             </div>
 
             <span class="tl-type">{tc(v.videoType ?? '')}</span>
@@ -390,6 +381,32 @@ const projectColors: Record<string, string> = {
         }
       });
     }
+
+    // Theme segmented control
+    const themeSegs = document.querySelectorAll<HTMLButtonElement>('.theme-seg');
+    type ThemePref = 'light' | 'system' | 'dark';
+
+    function resolveTheme(pref: ThemePref) {
+      return pref === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : pref;
+    }
+
+    function applyTheme(pref: ThemePref) {
+      document.documentElement.setAttribute('data-theme', resolveTheme(pref));
+      localStorage.setItem('theme', pref);
+      themeSegs.forEach(btn => btn.classList.toggle('active', btn.dataset.val === pref));
+    }
+
+    applyTheme((localStorage.getItem('theme') ?? 'system') as ThemePref);
+
+    themeSegs.forEach(btn => {
+      btn.addEventListener('click', () => applyTheme(btn.dataset.val as ThemePref));
+    });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if ((localStorage.getItem('theme') ?? 'system') === 'system') applyTheme('system');
+    });
 
     // Title search
     const searchEl = document.getElementById('title-search') as HTMLInputElement | null;
