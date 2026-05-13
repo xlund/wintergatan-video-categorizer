@@ -234,7 +234,7 @@ const projectColors: Record<string, string> = {
         const show =
           (activeProjects.size === 0    || activeProjects.has(proj))
           && (activeTypes.size === 0    || activeTypes.has(type))
-          && (activeInstruments.size === 0 || instr.some(i => activeInstruments.has(i)))
+          && (activeInstruments.size === 0 || [...activeInstruments].every(i => instr.includes(i)))
           && (searchMatchIds === null    || searchMatchIds.has(el.dataset.id ?? ''));
 
         el.classList.toggle('hidden', !show);
