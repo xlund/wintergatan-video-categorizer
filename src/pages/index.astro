@@ -1,109 +1,103 @@
 ---
 import Base from '../layouts/Base.astro';
-import VideoCard from '../components/VideoCard.astro';
 import videosRaw from '../data/videos.json';
 
 interface Video {
-  id: string; title: string; description: string;
-  publishedAt: string; thumbnail: string; tags: string[];
-  duration: string; viewCount: string; youtubeUrl: string;
+  id: string; title: string;
+  publishedAt: string; thumbnail: string;
+  youtubeUrl: string; duration: string;
   project: string; videoType: string; instruments: string[];
 }
 
-const titleCase = (s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+const tc = (s: string) =>
+  s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-// Sort newest first
+const TAG_COLORS = [
+  { bg: '#1e2d4a', text: '#60a5fa', border: '#2a4a7a' },
+  { bg: '#1a2e20', text: '#4ade80', border: '#265e35' },
+  { bg: '#2e2010', text: '#fbbf24', border: '#5a3e10' },
+  { bg: '#241535', text: '#c084fc', border: '#4a2a6a' },
+  { bg: '#0e2530', text: '#22d3ee', border: '#164a5a' },
+  { bg: '#2e1a0e', text: '#fb923c', border: '#5a3218' },
+  { bg: '#2a0e1e', text: '#f472b6', border: '#5a1a3a' },
+  { bg: '#1a2a1a', text: '#86efac', border: '#285a30' },
+];
+
+const tagColor = (name: string) => {
+  let h = 0;
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+  return TAG_COLORS[h % TAG_COLORS.length];
+};
+
 const videos = (videosRaw as Video[]).sort(
   (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
 );
 
-const projects   = [...new Set(videos.map(v => v.project).filter(Boolean))].sort();
 const videoTypes = [...new Set(videos.map(v => v.videoType).filter(Boolean))].sort();
 
 const instrCounts: Record<string, number> = {};
-videos.forEach(v => (v.instruments ?? []).forEach(i => { instrCounts[i] = (instrCounts[i] ?? 0) + 1; }));
+videos.forEach(v => (v.instruments ?? []).forEach(i => {
+  instrCounts[i] = (instrCounts[i] ?? 0) + 1;
+}));
 const instruments = Object.entries(instrCounts)
   .filter(([, n]) => n >= 5)
   .sort((a, b) => a[0].localeCompare(b[0]))
   .map(([name, count]) => ({ name, count }));
 
-const projectCounts = Object.fromEntries(projects.map(p => [p, videos.filter(v => v.project   === p).length]));
-const typeCounts    = Object.fromEntries(videoTypes.map(t => [t, videos.filter(v => v.videoType === t).length]));
+const typeCounts = Object.fromEntries(
+  videoTypes.map(t => [t, videos.filter(v => v.videoType === t).length])
+);
 
-// Timeline: group by year, descending
 const byYear: Record<number, Video[]> = {};
 videos.forEach(v => {
   const y = new Date(v.publishedAt).getFullYear();
   (byYear[y] ??= []).push(v);
 });
-const timelineYears = (Object.keys(byYear).map(Number)).sort((a, b) => b - a);
+const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
 
-const tlDate = (iso: string) =>
+const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-// Project color map for legend
 const projectColors: Record<string, string> = {
-  'Marble Machine X': 'var(--c-mmx)',
   'Marble Machine 3': 'var(--c-mm3)',
+  'Marble Machine X': 'var(--c-mmx)',
   'Marble Machine':   'var(--c-mm)',
-  'Wintergatan Band': 'var(--c-band)',
-  'Speelklok':        'var(--c-klok)',
   'Cyber Bass':       'var(--c-cyber)',
+  'Speelklok':        'var(--c-klok)',
   'Music Box':        'var(--c-mbox)',
+  'Wintergatan Band': 'var(--c-band)',
   'Other':            'var(--c-other)',
 };
 ---
 
 <Base>
   <header class="site-header">
-    <span class="site-title">wintergatan/<span>catalog</span></span>
+    <span class="site-title">wintergatan / <span>catalog</span></span>
     <span class="header-meta" id="results-count">{videos.length} videos</span>
   </header>
 
   <aside class="sidebar">
     {instruments.length > 0 && (
       <div class="filter-section">
-        <span class="filter-label">component</span>
-        <ul class="filter-list instrument-filter-list">
-          {instruments.map(({ name, count }) => (
-            <li>
-              <label>
-                <input type="checkbox" data-filter="instrument" value={name} />
-                {titleCase(name)}
-                <span class="filter-count" data-count-instrument={name}>{count}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
+        <span class="filter-label">Component</span>
+        <div class="combo" id="instrument-combo" data-instruments={JSON.stringify(instruments)}>
+          <div class="combo-trigger">
+            <input class="combo-input" type="text" placeholder="Search…" autocomplete="off" spellcheck="false" />
+          </div>
+          <ul class="combo-list" hidden></ul>
+        </div>
       </div>
     )}
 
-    {projects.length > 0 && (
+{videoTypes.length > 0 && (
       <div class="filter-section">
-        <span class="filter-label">project</span>
-        <ul class="filter-list">
-          {projects.map(p => (
-            <li>
-              <label>
-                <input type="checkbox" data-filter="project" value={p} />
-                {p}
-                <span class="filter-count" data-count-project={p}>{projectCounts[p]}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
-
-    {videoTypes.length > 0 && (
-      <div class="filter-section">
-        <span class="filter-label">type</span>
+        <span class="filter-label">Type</span>
         <ul class="filter-list">
           {videoTypes.map(t => (
             <li>
               <label>
                 <input type="checkbox" data-filter="type" value={t} />
-                {titleCase(t)}
+                {tc(t)}
                 <span class="filter-count" data-count-type={t}>{typeCounts[t]}</span>
               </label>
             </li>
@@ -111,166 +105,142 @@ const projectColors: Record<string, string> = {
         </ul>
       </div>
     )}
+
   </aside>
 
   <main class="main-content">
-    <!-- Tab bar -->
-    <div class="tab-bar">
-      <button class="tab active" data-tab="catalog" type="button">catalog</button>
-      <button class="tab" data-tab="timeline" type="button">timeline</button>
+    <!-- Year strip -->
+    <div class="year-strip">
+      {years.map(year => (
+        <button class="year-nav-btn" type="button" data-nav-year={year}>{year}</button>
+      ))}
     </div>
 
-    <div class="views">
-      <!-- ── Catalog view ── -->
-      <div id="view-catalog" class="view active">
-        <div class="table-header">
-          <span class="col-header col-thumb"></span>
-          <span class="col-header">title</span>
-          <span class="col-header">project</span>
-          <span class="col-header col-type">type</span>
-          <span class="col-header col-instruments">component</span>
-          <span class="col-header" style="text-align:right">date</span>
+    <!-- Legend -->
+    <div class="tl-legend">
+      {Object.entries(projectColors).map(([name, color]) => (
+        <button class="legend-item" type="button" data-project={name}>
+          <span class="legend-dot" style={`background:${color}`}></span>
+          {name}
+        </button>
+      ))}
+    </div>
+
+    <!-- Timeline -->
+    {years.map(year => (
+      <div class="timeline-year" data-year={year}>
+        <div class="year-header">
+          <span class="year-label">{year}</span>
+          <span class="year-count" id={`yc-${year}`}>{byYear[year].length}</span>
         </div>
-        <div class="video-list" id="video-list">
-          {videos.length === 0
-            ? (
-              <div class="empty-state">
-                <span>no videos yet.</span>
-                <span>run <code>npm run fetch-videos</code> to populate the catalog.</span>
+
+        {byYear[year].map(v => (
+          <a
+            class="timeline-entry"
+            href={v.youtubeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-id={v.id}
+            data-project={v.project}
+            data-type={v.videoType}
+            data-instruments={(v.instruments ?? []).join(',')}
+          >
+            <span class="tl-date">{fmtDate(v.publishedAt)}</span>
+
+            {v.thumbnail
+              ? <img class="tl-thumb" src={v.thumbnail} alt="" loading="lazy" />
+              : <div class="tl-thumb-placeholder"></div>
+            }
+
+            <div class="tl-body">
+              <span class="tl-title">{v.title}</span>
+              <div class="tl-meta">
+                {(v.instruments ?? []).slice(0, 5).map(i => {
+                  const { bg, text, border } = tagColor(i);
+                  return (
+                    <span class="tl-tag" style={`background:${bg};color:${text};border-color:${border}`}>
+                      {tc(i)}
+                    </span>
+                  );
+                })}
               </div>
-            )
-            : videos.map(v => (
-              <VideoCard
-                id={v.id} title={v.title} publishedAt={v.publishedAt}
-                thumbnail={v.thumbnail} youtubeUrl={v.youtubeUrl}
-                duration={v.duration} project={v.project}
-                videoType={v.videoType} instruments={v.instruments ?? []}
-              />
-            ))
-          }
-        </div>
-      </div>
-
-      <!-- ── Timeline view ── -->
-      <div id="view-timeline" class="view">
-        <!-- Legend -->
-        <div class="year-header" style="position:static; background:var(--bg); border-bottom: 1px solid var(--border);">
-          <div class="tl-legend">
-            {Object.entries(projectColors).map(([name, color]) => (
-              <span class="legend-item">
-                <span class="legend-dot" style={`background:${color}`}></span>
-                {name}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {timelineYears.map(year => (
-          <div class="timeline-year" data-year={year}>
-            <div class="year-header">
-              <span class="year-label">{year}</span>
-              <span class="year-count" id={`ycount-${year}`}>{byYear[year].length}</span>
             </div>
-            {byYear[year].map(v => (
-              <a
-                class="timeline-entry"
-                href={v.youtubeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-id={v.id}
-                data-project={v.project}
-                data-type={v.videoType}
-                data-instruments={(v.instruments ?? []).join(',')}
-              >
-                <span class="tl-date">{tlDate(v.publishedAt)}</span>
-                <span></span>
-                <div class="tl-body">
-                  <span class="tl-title">{v.title}</span>
-                  <div class="tl-meta">
-                    <span class="tl-project">{v.project}</span>
-                    {(v.instruments ?? []).slice(0, 4).map(i => (
-                      <span class="tl-tag">{titleCase(i)}</span>
-                    ))}
-                  </div>
-                </div>
-                <span class="tl-type">{titleCase(v.videoType ?? '')}</span>
-              </a>
-            ))}
-          </div>
+
+            <span class="tl-type">{tc(v.videoType ?? '')}</span>
+          </a>
         ))}
       </div>
-    </div>
+    ))}
   </main>
 
   <script>
-    // ── DOM refs ──────────────────────────────────────────────────────────
-    const list      = document.getElementById('video-list')!;
-    const countEl   = document.getElementById('results-count')!;
-    const catalogRows   = Array.from(list.querySelectorAll<HTMLElement>('.video-row'));
-    const timelineEntries = Array.from(document.querySelectorAll<HTMLElement>('.timeline-entry'));
+    const countEl    = document.getElementById('results-count')!;
+    const entries    = Array.from(document.querySelectorAll<HTMLElement>('.timeline-entry'));
+    const mainContent = document.querySelector<HTMLElement>('.main-content')!;
+    const yearNavBtns = Array.from(document.querySelectorAll<HTMLElement>('.year-nav-btn'));
 
-    // ── Filter state ──────────────────────────────────────────────────────
     let activeProjects:    Set<string> = new Set();
     let activeTypes:       Set<string> = new Set();
     let activeInstruments: Set<string> = new Set();
+    let lastICount: Record<string, number> = {};
 
-    // ── Filter + count ────────────────────────────────────────────────────
+    const STRIP_H = 36;
+
+    function updateActiveYear() {
+      const containerTop = mainContent.getBoundingClientRect().top;
+      const yearEls = Array.from(document.querySelectorAll<HTMLElement>('.timeline-year:not(.hidden)'));
+      let active: string | null = null;
+      for (const yr of yearEls) {
+        if (yr.getBoundingClientRect().top - containerTop <= STRIP_H + 1) active = yr.dataset.year ?? null;
+      }
+      yearNavBtns.forEach(btn => {
+        const isActive = btn.dataset.navYear === active;
+        if (isActive && !btn.classList.contains('active'))
+          btn.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+        btn.classList.toggle('active', isActive);
+      });
+    }
+
     function applyFilters() {
-      const pCount: Record<string, number> = {};
       const tCount: Record<string, number> = {};
       const iCount: Record<string, number> = {};
       let visible = 0;
 
-      for (const row of catalogRows) {
-        const rowProject     = row.dataset.project ?? '';
-        const rowType        = row.dataset.type ?? '';
-        const rowInstruments = (row.dataset.instruments ?? '').split(',').filter(Boolean);
+      for (const el of entries) {
+        const proj  = el.dataset.project ?? '';
+        const type  = el.dataset.type ?? '';
+        const instr = (el.dataset.instruments ?? '').split(',').filter(Boolean);
 
-        const show = (activeProjects.size === 0 || activeProjects.has(rowProject))
-                  && (activeTypes.size === 0     || activeTypes.has(rowType))
-                  && (activeInstruments.size === 0 || rowInstruments.some(i => activeInstruments.has(i)));
+        const show =
+          (activeProjects.size === 0    || activeProjects.has(proj))
+          && (activeTypes.size === 0    || activeTypes.has(type))
+          && (activeInstruments.size === 0 || instr.some(i => activeInstruments.has(i)));
 
-        row.classList.toggle('hidden', !show);
+        el.classList.toggle('hidden', !show);
 
         if (show) {
           visible++;
-          pCount[rowProject] = (pCount[rowProject] ?? 0) + 1;
-          tCount[rowType]    = (tCount[rowType]    ?? 0) + 1;
-          rowInstruments.forEach(i => { iCount[i] = (iCount[i] ?? 0) + 1; });
+          tCount[type] = (tCount[type] ?? 0) + 1;
+          instr.forEach(i => { iCount[i] = (iCount[i] ?? 0) + 1; });
         }
       }
 
-      // Sync timeline entries (same filter, no double-counting)
-      for (const entry of timelineEntries) {
-        const rowProject     = entry.dataset.project ?? '';
-        const rowType        = entry.dataset.type ?? '';
-        const rowInstruments = (entry.dataset.instruments ?? '').split(',').filter(Boolean);
+      lastICount = { ...iCount };
 
-        const show = (activeProjects.size === 0 || activeProjects.has(rowProject))
-                  && (activeTypes.size === 0     || activeTypes.has(rowType))
-                  && (activeInstruments.size === 0 || rowInstruments.some(i => activeInstruments.has(i)));
-
-        entry.classList.toggle('hidden', !show);
-      }
-
-      // Update year group visibility + counts
-      document.querySelectorAll<HTMLElement>('.timeline-year').forEach(yearEl => {
-        const year = yearEl.dataset.year!;
-        const visibleInYear = Array.from(yearEl.querySelectorAll('.timeline-entry'))
-          .filter(el => !el.classList.contains('hidden')).length;
-        yearEl.classList.toggle('hidden', visibleInYear === 0);
-        const countSpan = document.getElementById(`ycount-${year}`);
-        if (countSpan) countSpan.textContent = String(visibleInYear);
+      document.querySelectorAll<HTMLElement>('.timeline-year').forEach(yr => {
+        const visInYear = Array.from(yr.querySelectorAll('.timeline-entry'))
+          .filter(e => !e.classList.contains('hidden')).length;
+        yr.classList.toggle('hidden', visInYear === 0);
+        const span = document.getElementById(`yc-${yr.dataset.year}`);
+        if (span) span.textContent = String(visInYear);
       });
 
-      countEl.textContent = visible === catalogRows.length
-        ? `${catalogRows.length} videos`
-        : `${visible} / ${catalogRows.length}`;
+      countEl.textContent = visible === entries.length
+        ? `${entries.length} videos`
+        : `${visible} / ${entries.length}`;
 
-      document.querySelectorAll<HTMLElement>('[data-count-project]').forEach(el => {
-        const n = pCount[el.dataset.countProject ?? ''] ?? 0;
-        el.textContent = String(n);
-        el.closest('label')?.classList.toggle('zero', n === 0);
+      document.querySelectorAll<HTMLElement>('.legend-item[data-project]').forEach(el => {
+        el.classList.toggle('dimmed', activeProjects.size > 0 && !activeProjects.has(el.dataset.project ?? ''));
       });
 
       document.querySelectorAll<HTMLElement>('[data-count-type]').forEach(el => {
@@ -282,33 +252,122 @@ const projectColors: Record<string, string> = {
       document.querySelectorAll<HTMLElement>('[data-count-instrument]').forEach(el => {
         const n = iCount[el.dataset.countInstrument ?? ''] ?? 0;
         el.textContent = String(n);
-        el.closest('label')?.classList.toggle('zero', n === 0 && activeInstruments.size > 0);
+        el.closest('.combo-option')?.classList.toggle('zero', n === 0 && activeInstruments.size > 0);
       });
+
+      yearNavBtns.forEach(btn => {
+        const yr = document.querySelector<HTMLElement>(`.timeline-year[data-year="${btn.dataset.navYear}"]`);
+        btn.classList.toggle('zero', yr?.classList.contains('hidden') ?? false);
+      });
+      updateActiveYear();
     }
 
-    // ── Tab switching ─────────────────────────────────────────────────────
-    document.querySelectorAll<HTMLButtonElement>('.tab').forEach(btn => {
+    // Legend project filter
+    document.querySelectorAll<HTMLElement>('.legend-item[data-project]').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById(`view-${btn.dataset.tab}`)?.classList.add('active');
-      });
-    });
-
-    // ── Checkboxes ────────────────────────────────────────────────────────
-    document.querySelectorAll<HTMLInputElement>('[data-filter]').forEach(cb => {
-      cb.addEventListener('change', () => {
-        cb.closest('label')?.classList.toggle('active', cb.checked);
-        const target =
-          cb.dataset.filter === 'project'    ? activeProjects    :
-          cb.dataset.filter === 'type'       ? activeTypes       :
-          cb.dataset.filter === 'instrument' ? activeInstruments : null;
-        if (!target) return;
-        if (cb.checked) target.add(cb.value);
-        else            target.delete(cb.value);
+        const proj = btn.dataset.project ?? '';
+        activeProjects.has(proj) ? activeProjects.delete(proj) : activeProjects.add(proj);
+        btn.classList.toggle('active', activeProjects.has(proj));
         applyFilters();
       });
     });
+
+    // Type filter checkboxes
+    document.querySelectorAll<HTMLInputElement>('[data-filter="type"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        cb.closest('label')?.classList.toggle('active', cb.checked);
+        cb.checked ? activeTypes.add(cb.value) : activeTypes.delete(cb.value);
+        applyFilters();
+      });
+    });
+
+    // Year jump nav
+    yearNavBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const yr = document.querySelector<HTMLElement>(`.timeline-year[data-year="${btn.dataset.navYear}"]`);
+        if (!yr) return;
+        const top = yr.getBoundingClientRect().top - mainContent.getBoundingClientRect().top + mainContent.scrollTop - STRIP_H;
+        mainContent.scrollTo({ top, behavior: 'smooth' });
+      });
+    });
+
+    mainContent.addEventListener('scroll', updateActiveYear, { passive: true });
+    updateActiveYear();
+
+    // Instrument combobox
+    const comboEl = document.getElementById('instrument-combo');
+    if (comboEl) {
+      const trigger = comboEl.querySelector<HTMLElement>('.combo-trigger')!;
+      const input   = comboEl.querySelector<HTMLInputElement>('.combo-input')!;
+      const listEl  = comboEl.querySelector<HTMLElement>('.combo-list')!;
+
+      interface Instr { name: string; count: number; }
+      const all: Instr[] = JSON.parse(comboEl.dataset.instruments ?? '[]');
+      const defaults: Record<string, number> = Object.fromEntries(all.map(i => [i.name, i.count]));
+      const tc = (s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+      function renderChips() {
+        trigger.querySelectorAll('.combo-chip').forEach(c => c.remove());
+        for (const name of activeInstruments) {
+          const chip = document.createElement('span');
+          chip.className = 'combo-chip';
+          chip.innerHTML = `${tc(name)}<button class="combo-chip-x" type="button" data-name="${name}">×</button>`;
+          trigger.insertBefore(chip, input);
+        }
+      }
+
+      function buildList(q: string) {
+        const lq = q.toLowerCase();
+        const matches = all.filter(i => !lq || i.name.toLowerCase().includes(lq));
+        listEl.innerHTML = '';
+        const hasCounts = Object.keys(lastICount).length > 0;
+        for (const { name } of matches) {
+          const sel  = activeInstruments.has(name);
+          const cnt  = hasCounts ? (lastICount[name] ?? 0) : defaults[name];
+          const zero = hasCounts && cnt === 0 && activeInstruments.size > 0;
+          const li = document.createElement('li');
+          li.className = `combo-option${sel ? ' selected' : ''}${zero ? ' zero' : ''}`;
+          li.innerHTML =
+            `<span class="co-check">${sel ? '✓' : ''}</span>` +
+            `<span class="co-name">${tc(name)}</span>` +
+            `<span class="filter-count" data-count-instrument="${name}">${cnt}</span>`;
+          li.addEventListener('mousedown', e => {
+            e.preventDefault();
+            activeInstruments.has(name) ? activeInstruments.delete(name) : activeInstruments.add(name);
+            renderChips();
+            buildList(input.value);
+            applyFilters();
+          });
+          listEl.appendChild(li);
+        }
+        listEl.hidden = matches.length === 0;
+      }
+
+      trigger.addEventListener('click', e => {
+        const x = (e.target as HTMLElement).closest<HTMLElement>('.combo-chip-x');
+        if (x) {
+          activeInstruments.delete(x.dataset.name ?? '');
+          renderChips();
+          buildList(input.value);
+          applyFilters();
+          return;
+        }
+        input.focus();
+      });
+
+      input.addEventListener('focus', () => buildList(input.value));
+      input.addEventListener('input', () => buildList(input.value));
+      input.addEventListener('blur',  () => setTimeout(() => { listEl.hidden = true; }, 150));
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { listEl.hidden = true; input.blur(); }
+        if (e.key === 'Backspace' && input.value === '' && activeInstruments.size > 0) {
+          const last = [...activeInstruments].pop()!;
+          activeInstruments.delete(last);
+          renderChips();
+          buildList('');
+          applyFilters();
+        }
+      });
+    }
   </script>
 </Base>
