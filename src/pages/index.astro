@@ -58,7 +58,6 @@ const projectColors: Record<string, string> = {
 <Base>
   <SiteHeader videoCount={videos.length} />
 
-  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
   <Sidebar instruments={instruments} videoTypes={videoTypes} typeCounts={typeCounts} />
 
   <main class="main-content">
@@ -326,18 +325,13 @@ const projectColors: Record<string, string> = {
       });
     }
 
-    // Mobile sidebar toggle
-    const sidebarEl  = document.querySelector<HTMLElement>('.sidebar');
-    const backdrop   = document.getElementById('sidebar-backdrop');
-    const toggleBtn  = document.getElementById('sidebar-toggle');
+    // Mobile sidebar expand/collapse
+    const sidebarEl = document.querySelector<HTMLElement>('.sidebar');
+    const expandBtn = document.getElementById('sidebar-toggle');
 
-    function openSidebar()  { sidebarEl?.classList.add('open');    backdrop?.classList.add('open'); }
-    function closeSidebar() { sidebarEl?.classList.remove('open'); backdrop?.classList.remove('open'); }
-
-    toggleBtn?.addEventListener('click', () => {
-      sidebarEl?.classList.contains('open') ? closeSidebar() : openSidebar();
+    expandBtn?.addEventListener('click', () => {
+      const open = sidebarEl?.classList.toggle('open');
+      if (expandBtn) expandBtn.textContent = open ? '‹' : '›';
     });
-    backdrop?.addEventListener('click', closeSidebar);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
   </script>
 </Base>
