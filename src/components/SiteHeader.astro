@@ -4,7 +4,10 @@ const { videoCount } = Astro.props;
 ---
 
 <header class="site-header">
+  <div class="header-left">
+  <img class="site-icon" src="/icon.png" alt="" aria-hidden="true" />
   <span class="site-title">wintergatan / <span>catalog</span></span>
+  </div>
   <div class="header-right">
     <div class="theme-switch" role="group" aria-label="Color theme">
       <button class="theme-seg" data-val="light" type="button">light</button>

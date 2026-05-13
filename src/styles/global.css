@@ -109,6 +109,19 @@ body {
   font-weight: 400;
 }
 
+.site-icon {
+  height: 28px;
+  width: auto;
+  opacity: 0.85;
+  margin-left: 0.5rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .header-right {
   display: flex;
   align-items: center;
