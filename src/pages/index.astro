@@ -40,7 +40,6 @@ videos.forEach(v => (v.instruments ?? []).forEach(i => {
   instrCounts[i] = (instrCounts[i] ?? 0) + 1;
 }));
 const instruments = Object.entries(instrCounts)
-  .filter(([, n]) => n >= 5)
   .sort((a, b) => a[0].localeCompare(b[0]))
   .map(([name, count]) => ({ name, count }));
 
