@@ -1,0 +1,18 @@
+---
+interface Instrument { name: string; count: number; }
+interface Props { instruments: Instrument[]; }
+const { instruments } = Astro.props;
+---
+
+<div class="filter-bar">
+  <input class="search-input filter-bar-search" id="title-search" type="text" placeholder="Search title…" autocomplete="off" spellcheck="false" />
+
+  {instruments.length > 0 && (
+    <div class="combo filter-bar-combo" id="instrument-combo" data-instruments={JSON.stringify(instruments)}>
+      <div class="combo-trigger">
+        <input class="combo-input" type="text" placeholder="Filter on component…" autocomplete="off" spellcheck="false" />
+      </div>
+      <ul class="combo-list" hidden></ul>
+    </div>
+  )}
+</div>
