@@ -184,7 +184,10 @@ const projectColors: Record<string, string> = {
     let activeInstruments: Set<string> = new Set();
     let lastICount: Record<string, number> = {};
 
-    const STRIP_H = 36;
+    const yearStrip  = document.querySelector<HTMLElement>('.year-strip')!;
+    const legendEl   = document.querySelector<HTMLElement>('.tl-legend')!;
+    const STRIP_H    = yearStrip.offsetHeight + legendEl.offsetHeight;
+    document.documentElement.style.setProperty('--sticky-h', `${STRIP_H}px`);
 
     function updateActiveYear() {
       const containerTop = mainContent.getBoundingClientRect().top;
@@ -195,8 +198,12 @@ const projectColors: Record<string, string> = {
       }
       yearNavBtns.forEach(btn => {
         const isActive = btn.dataset.navYear === active;
-        if (isActive && !btn.classList.contains('active'))
-          btn.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+        if (isActive && !btn.classList.contains('active')) {
+          yearStrip.scrollTo({
+            left: btn.offsetLeft - (yearStrip.clientWidth - btn.offsetWidth) / 2,
+            behavior: 'smooth',
+          });
+        }
         btn.classList.toggle('active', isActive);
       });
     }
